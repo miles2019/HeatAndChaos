@@ -35,24 +35,24 @@ func add(amount: float, raw: bool = false) -> void:
 
 func update(dt: float) -> void:
 	vent_cd = maxf(0.0, vent_cd - dt)
+	burn_t = maxf(0.0, burn_t - dt)
 	idle_t += dt
 	if lock_t > 0.0:
 		lock_t -= dt
-		burn_t = minf(burn_t, lock_t + 0.0)
 		if lock_t <= 0.0:
 			heat = 45.0
 			burn_t = 0.0
 			Game.heat_changed.emit(heat)
 		return
 	if idle_t > 0.6 and heat > 0.0:
-		heat = maxf(0.0, heat - DECAY * dt)
+		heat = maxf(0.0, heat - DECAY * (1.7 if Game.has_relic("cooling_fins") else 1.0) * dt)
 		Game.heat_changed.emit(heat)
 
 ## Returns the heat ratio that was dumped.
 func vent() -> float:
 	var h := ratio()
 	heat = 0.0
-	vent_cd = VENT_COOLDOWN
+	vent_cd = VENT_COOLDOWN * (0.5 if Game.has_relic("vent_cap") else 1.0)
 	if lock_t > 0.0:
 		lock_t = minf(lock_t, 1.2)
 		burn_t = 0.0

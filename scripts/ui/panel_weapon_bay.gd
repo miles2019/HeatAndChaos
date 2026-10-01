@@ -16,9 +16,9 @@ var _first: Control
 func _ready() -> void:
 	theme = UIKit.theme()
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	position = Vector2(14, 14)
-	custom_minimum_size = Vector2(612, 332)
-	size = Vector2(612, 332)
+	position = Vector2(20, 14)
+	custom_minimum_size = Vector2(920, 512)
+	size = Vector2(920, 512)
 	if not meta_mode and Game.loadout:
 		ids = Game.loadout.ids().map(func(x: Variant) -> String: return String(x))
 	elif meta_mode:
@@ -26,24 +26,24 @@ func _ready() -> void:
 	var root := VBoxContainer.new()
 	root.add_theme_constant_override("separation", 4)
 	add_child(root)
-	root.add_child(UIKit.label("WEAPON BAY  -  tear it apart, bolt it back together", Pal.AMBER, 8))
+	root.add_child(UIKit.label("WEAPON BAY  -  tear it apart, bolt it back together", Pal.AMBER, 16))
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 6)
 	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	root.add_child(row)
 	for slot in ["trigger", "trajectory", "catalyst"]:
 		var col := VBoxContainer.new()
-		col.custom_minimum_size = Vector2(142, 0)
+		col.custom_minimum_size = Vector2(212, 0)
 		col.add_theme_constant_override("separation", 2)
 		var titles := {"trigger": "TRIGGER (fire type)", "trajectory": "TRAJECTORY (flight)", "catalyst": "CATALYST (impact)"}
-		col.add_child(UIKit.label(titles[slot], Pal.CYAN, 8))
+		col.add_child(UIKit.label(titles[slot], Pal.CYAN, 16))
 		row.add_child(col)
 		_cols[slot] = col
 	_info.bbcode_enabled = true
-	_info.custom_minimum_size = Vector2(290, 112)
+	_info.custom_minimum_size = Vector2(270, 190)
 	_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_build.bbcode_enabled = true
-	_build.custom_minimum_size = Vector2(290, 130)
+	_build.custom_minimum_size = Vector2(270, 230)
 	var rc := VBoxContainer.new()
 	rc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	rc.add_child(_info)
@@ -54,10 +54,10 @@ func _ready() -> void:
 	root.add_child(prow)
 	prow.add_child(UIKit.label("PRESETS:", Pal.AMBER))
 	for i in 3:
-		prow.add_child(UIKit.button("SAVE %d" % (i + 1), _save_preset.bind(i), 44))
+		prow.add_child(UIKit.button("SAVE %d" % (i + 1), _save_preset.bind(i), 80))
 	for i in 3:
-		prow.add_child(UIKit.button("LOAD %d" % (i + 1), _load_preset.bind(i), 44))
-	var close := UIKit.button("DONE", _close, 56)
+		prow.add_child(UIKit.button("LOAD %d" % (i + 1), _load_preset.bind(i), 80))
+	var close := UIKit.button("DONE", _close, 100)
 	prow.add_child(close)
 	_build_lists()
 	_refresh()
@@ -71,7 +71,7 @@ func _build_lists() -> void:
 	for slot in _cols:
 		for m in ModuleDB.by_slot(StringName(slot)):
 			var mod: WeaponModule = m
-			var b := UIKit.button("", _select.bind(slot, String(mod.id)), 138)
+			var b := UIKit.button("", _select.bind(slot, String(mod.id)), 208)
 			b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			b.clip_text = true
 			b.focus_entered.connect(_show_module.bind(mod))

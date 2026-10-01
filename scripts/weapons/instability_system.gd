@@ -18,7 +18,7 @@ func value() -> float:
 	return loadout.instability if loadout else 0.0
 
 func chance() -> float:
-	return pow(value() / 100.0, 2.0) * 0.32
+	return pow(value() / 100.0, 2.0) * 0.32 * (0.7 if Game.has_relic("insurance") else 1.0)
 
 func glitch_chance() -> float:
 	if value() < GLITCH_THRESHOLD:

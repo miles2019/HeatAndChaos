@@ -37,7 +37,7 @@ func _ai(dt: float, pl) -> void:
 				state = "telegraph"
 				st = 0.9
 				target = pl.position + pl.vel * 0.55
-				var box := Room.INNER.grow(-10.0)
+				var box := room.inner.grow(-10.0)
 				target = Vector2(clampf(target.x, box.position.x, box.end.x), clampf(target.y, box.position.y, box.end.y))
 		"telegraph":
 			st -= dt

@@ -13,6 +13,7 @@ const GLYPH := {
 	"S": [".XXXX", "X....", "X....", ".XXX.", "....X", "....X", "XXXX."],
 }
 const LOGO := ["HEAT", "&", "CHAOS"]
+const S := Vector2(1.5, 1.5)
 
 var t := 0.0
 var idle_t := 0.0
@@ -31,7 +32,7 @@ var _first_btn: Button
 
 func _ready() -> void:
 	theme = UIKit.theme()
-	_font = ThemeDB.fallback_font
+	_font = Fonts.main()
 	set_anchors_preset(Control.PRESET_FULL_RECT)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	for i in 11:
@@ -61,8 +62,8 @@ func _build_menu() -> void:
 		menu.get_parent().remove_child(menu)
 	for c in menu.get_children():
 		c.queue_free()
-	menu.position = Vector2(24, 150)
-	menu.add_theme_constant_override("separation", 3)
+	menu.position = Vector2(30, 222)
+	menu.add_theme_constant_override("separation", 5)
 	content_layer.add_child(menu)
 	var entries := [
 		["start_run", _start_run, true],
@@ -75,7 +76,7 @@ func _build_menu() -> void:
 	]
 	_first_btn = null
 	for e in entries:
-		var b := UIKit.button(Settings.t(e[0]), e[1], 150)
+		var b := UIKit.button(Settings.t(e[0]), e[1], 240)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.disabled = not e[2]
 		b.focus_entered.connect(_poke_letters.bind(0.35))
@@ -84,10 +85,10 @@ func _build_menu() -> void:
 			_first_btn = b
 	_first_btn.call_deferred("grab_focus")
 	var sc := UIKit.label("SCRAP %d    CORES %d" % [Save.data["scrap"], Save.data["cores"]], Pal.AMBER)
-	sc.position = Vector2(24, 336)
+	sc.position = Vector2(30, 500)
 	content_layer.add_child(sc)
 	var hint := UIKit.label("WASD move | Mouse aim+shoot | RMB/Q vent | Space dash | E bench | F1-F4 dev builds", Color("6a7285"))
-	hint.position = Vector2(150, 346)
+	hint.position = Vector2(300, 512)
 	content_layer.add_child(hint)
 
 func _start_run() -> void:
@@ -187,6 +188,7 @@ func _core_pulse() -> float:
 	return 0.5 + 0.5 * sin(t * (1.6 + restless * 5.0)) + _core_flicker * randf()
 
 func _draw() -> void:
+	draw_set_transform(Vector2.ZERO, 0.0, S)
 	draw_rect(Rect2(0, 0, 640, 360), Pal.BG)
 	# back wall: tiles, pipes, cables
 	for ty in 12:
@@ -234,10 +236,10 @@ func _draw() -> void:
 	for d in drones:
 		var dp: Vector2 = d["p"] + Vector2(0, sin(t * 2.0 + d["ph"]) * 5.0)
 		var s := Vector2(1.0 + 0.1 * sin(t * 4.0 + d["ph"]), 1.0 - 0.1 * sin(t * 4.0 + d["ph"]))
-		draw_set_transform(dp, 0.0, s)
+		draw_set_transform(dp * 1.5, 0.0, s * 1.5)
 		draw_colored_polygon(PackedVector2Array([Vector2(-6, 0), Vector2(-2, -4), Vector2(2, -4), Vector2(6, 0), Vector2(2, 4), Vector2(-2, 4)]), Pal.STEEL)
 		draw_rect(Rect2(-1, -1, 3, 2), Pal.RED if int(t * 2.0 + d["ph"]) % 2 == 0 else Pal.CYAN)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		draw_set_transform(Vector2.ZERO, 0.0, S)
 	_draw_logo()
 	for sp in sparks:
 		var col2: Color = sp["c"]
@@ -249,6 +251,8 @@ func _draw() -> void:
 	# left panel for the menu
 	draw_rect(Rect2(12, 140, 174, 190), Color(0, 0, 0, 0.45))
 	draw_rect(Rect2(12, 140, 174, 190), Pal.STEEL, false, 1.0)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	draw_string(_font, Vector2(420, 340), "an overheated roguelike", HORIZONTAL_ALIGNMENT_CENTER, 400.0, 16, Color("8a93a5"))
 
 func _draw_logo() -> void:
 	var px := 5.0
@@ -291,10 +295,9 @@ func _draw_logo() -> void:
 					draw_rect(Rect2(pos, Vector2(px * s.value.x, px * s.value.y)), col)
 					draw_rect(Rect2(pos, Vector2(px * s.value.x, 1)), Color(1, 1, 1, 0.5))
 		idx += 1
-	var tag := "an overheated roguelike"
-	draw_string(_font, Vector2(213, 224), tag, HORIZONTAL_ALIGNMENT_CENTER, 400.0, 8, Color("8a93a5"))
 
 func _draw_glow(c: Node2D) -> void:
+	c.draw_set_transform(Vector2.ZERO, 0.0, S)
 	var p := _core_pulse()
 	Juice.glow(c, Vector2(413, 100), 120.0 + p * 20.0, Color(1.0, 0.3, 0.1, 0.35 + 0.2 * p))
 	for i in 4:

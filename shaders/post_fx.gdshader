@@ -35,14 +35,14 @@ void fragment() {
 	float tear = step(1.0 - instability * 0.06, hash(row + floor(TIME * 9.0)));
 	off.x += tear * 0.012 * instability * (hash(row * 3.1 + TIME) - 0.5) * 2.0;
 	vec2 cuv = uv + off;
-	float ab = aberration + length(off) * 1.4 + instability * 0.0006 + heat * heat * 0.0006;
+	float ab = aberration + length(off) * 1.4 + instability * 0.0003 + heat * heat * 0.0003;
 	vec2 dir = normalize((uv - vec2(0.5)) + 0.0001);
 	vec3 col;
 	col.r = texture(screen_tex, cuv + dir * ab).r;
 	col.g = texture(screen_tex, cuv).g;
 	col.b = texture(screen_tex, cuv - dir * ab).b;
 	// subtle scanlines
-	float sl = 0.5 + 0.5 * sin(uv.y * 360.0 * 3.14159);
+	float sl = 0.5 + 0.5 * sin(uv.y * 540.0 * 3.14159);
 	col *= 1.0 - scan * 0.5 * sl;
 	// heat: window rim pulses red, in sync with the heartbeat / pulse speed
 	vec2 q = (uv - 0.5) * vec2(1.0, 0.8);

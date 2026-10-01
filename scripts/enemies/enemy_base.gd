@@ -27,8 +27,12 @@ var face := 0.0
 var _dot_acc := 0.0
 var _pulse_off := 0.0
 var show_bar := true
+var slow_t := 0.0
+var scale_hp := true
 
 func _ready() -> void:
+	if scale_hp:
+		hp *= Game.hp_scale()
 	max_hp = hp
 	spawn_t = 0.3
 	_pulse_off = randf() * TAU
@@ -44,7 +48,7 @@ func _setup() -> void:
 	pass
 
 func speed_mult() -> float:
-	return 1.35 if buff_t > 0.0 else 1.0
+	return (1.35 if buff_t > 0.0 else 1.0) * (0.4 if slow_t > 0.0 else 1.0)
 
 func c(col: Color) -> Color:
 	return Color.WHITE if flash_t > 0.0 else col
@@ -55,6 +59,7 @@ func _process(dt: float) -> void:
 	var pl = Game.world.player if Game.world else null
 	flash_t = maxf(0.0, flash_t - dt)
 	buff_t = maxf(0.0, buff_t - dt)
+	slow_t = maxf(0.0, slow_t - dt)
 	contact_cd = maxf(0.0, contact_cd - dt)
 	if spawn_t > 0.0:
 		spawn_t -= dt

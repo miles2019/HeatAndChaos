@@ -53,6 +53,13 @@ func setup(k: String, pos: Vector2, params: Dictionary) -> void:
 			z_index = -8
 		"arc":
 			z_index = 8
+		"stasis":
+			z_index = -9
+			color = Color("7fe9ff")
+		"bomb":
+			z_index = -8
+			color = Pal.RED
+			Audio.play("charge", 0.5, -8.0)
 
 func _start_shock() -> void:
 	color = p.get("color", Pal.CYAN)
@@ -63,6 +70,8 @@ func _start_shock() -> void:
 	Juice.burst(position, color, 14, radius * 2.0)
 	if not boss:
 		Juice.shake(Vector2.ZERO, 1.2 + radius / 60.0, 0.3)
+		if Game.world:
+			Game.world.current_room().crack_blast(position, radius, float(p.get("damage", 5.0)))
 	if radius >= 90.0 and not boss:
 		Juice.wave(position, 0.7)
 
@@ -88,6 +97,13 @@ func _process(dt: float) -> void:
 				queue_free()
 		"arc":
 			if t >= 0.22:
+				queue_free()
+		"stasis":
+			_step_stasis(dt)
+		"bomb":
+			if t >= p.get("delay", 1.0):
+				_done = true
+				Game.world.spawn_effect("shock", position, {"radius": radius, "dur": p.get("dur", 0.35), "hostile": true, "color": Pal.RED})
 				queue_free()
 	queue_redraw()
 	_glow.queue_redraw()
@@ -286,6 +302,21 @@ func _draw() -> void:
 			for i in 4:
 				var a3 := t * 9.0 + i * PI * 0.5
 				draw_rect(Rect2((Vector2.from_angle(a3) * 12.0 * (1.2 - k2)).floor(), Vector2(2, 2)), c2)
+		"stasis":
+			var fade2 := clampf((duration - t) / 0.8, 0.0, 1.0)
+			var r4 := radius * minf(1.0, t * 6.0)
+			draw_circle(Vector2.ZERO, r4, Color(0.4, 0.85, 1.0, 0.16 * fade2))
+			draw_arc(Vector2.ZERO, r4, 0.0, TAU, 32, Color(0.6, 0.95, 1.0, 0.8 * fade2), 1.0)
+			for i in 6:
+				var a5 := TAU * i / 6.0 + t * 0.3
+				draw_line(Vector2.from_angle(a5) * r4 * 0.2, Vector2.from_angle(a5) * r4 * 0.9, Color(0.8, 1.0, 1.0, 0.4 * fade2), 1.0)
+		"bomb":
+			var d6: float = p.get("delay", 1.0)
+			var k6 := clampf(t / d6, 0.0, 1.0)
+			var bl := 0.4 + 0.5 * sin(t * (12.0 + 30.0 * k6))
+			draw_arc(Vector2.ZERO, radius, 0.0, TAU, 40, Color(1, 0.25, 0.1, 0.3 + 0.4 * bl), 1.0)
+			draw_arc(Vector2.ZERO, radius * k6, 0.0, TAU, 32, Color(1, 0.6, 0.2, 0.8), 2.0)
+			draw_circle(Vector2.ZERO, 3.0 + 3.0 * bl, Color(1, 0.3, 0.1))
 		"arc":
 			var a: Vector2 = p["a"] - position
 			var b: Vector2 = p["b"] - position
@@ -314,5 +345,21 @@ func _draw_glow(c: Node2D) -> void:
 		"implode":
 			var delay: float = p.get("delay", 0.45)
 			Juice.glow(c, Vector2.ZERO, 14.0 + 30.0 * clampf(t / delay, 0.0, 1.0), Color(0.6, 0.2, 1.0, 0.6))
+		"bomb":
+			Juice.glow(c, Vector2.ZERO, 22.0 + 20.0 * clampf(t / float(p.get("delay", 1.0)), 0.0, 1.0), Color(1.0, 0.3, 0.1, 0.5))
+		"stasis":
+			Juice.glow(c, Vector2.ZERO, radius * 1.5, Color(0.4, 0.9, 1.0, 0.18))
 		"spawn":
 			Juice.glow(c, Vector2.ZERO, 22.0, Color(1, 0.3, 0.2, 0.3 * clampf(t / duration, 0.0, 1.0)))
+
+func _step_stasis(dt: float) -> void:
+	if t > duration:
+		queue_free()
+		return
+	_tick -= dt
+	if _tick <= 0.0:
+		_tick = 0.2
+		var r := radius * minf(1.0, t * 6.0)
+		for e in _enemies():
+			if is_instance_valid(e) and not e.dead and e.position.distance_to(position) < r + e.radius:
+				e.slow_t = 0.4

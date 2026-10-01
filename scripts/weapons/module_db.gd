@@ -15,6 +15,13 @@ const MISFIRES := {
 	&"glitch_heat_spike": {"name": "GLITCH: HEAT SPIKE", "desc": "Reality stutters - +20 heat.", "color": Pal.VIOLET, "symbol": "#^"},
 	&"glitch_scatter": {"name": "GLITCH: GHOST VOLLEY", "desc": "Echo shots in random directions.", "color": Pal.VIOLET, "symbol": "#*"},
 	&"glitch_input_swap": {"name": "GLITCH: CONTROL SWAP", "desc": "Movement inverted for 1.2s.", "color": Pal.VIOLET, "symbol": "#~"},
+	&"flashback": {"name": "FLASHBACK", "desc": "Flames lick back: +30 heat and you burn 2s.", "color": Pal.RED, "symbol": "^^"},
+	&"foot_mine": {"name": "FOOT MINE", "desc": "A bomb arms under your feet. Move!", "color": Pal.AMBER, "symbol": "(*)"},
+	&"dizzy": {"name": "DIZZY", "desc": "Controls inverted for 1.5s.", "color": Pal.VIOLET, "symbol": "@@"},
+	&"shrapnel_ring": {"name": "SHRAPNEL RING", "desc": "A ring of hostile shards bursts around you.", "color": Pal.WHITE, "symbol": "o*o"},
+	&"slowdown": {"name": "SLOW-MO", "desc": "You move at 55% speed for 2s.", "color": Pal.CYAN, "symbol": "--"},
+	&"self_blast": {"name": "SELF BLAST", "desc": "The charge detonates at your feet.", "color": Pal.RED, "symbol": "(!)"},
+	&"mirror_back": {"name": "MIRROR BACK", "desc": "A second volley fires behind you.", "color": Pal.VIOLET, "symbol": "<|>"},
 }
 const GLITCH_POOL := [&"glitch_heat_spike", &"glitch_scatter", &"glitch_input_swap"]
 
@@ -24,6 +31,12 @@ const BUILDS := {
 	"minefield": {"name": "Acid Minefield", "ids": ["buckshot_cluster", "ricochet_coil", "toxic_catalyst"]},
 	"sniper": {"name": "Ghost Sniper", "ids": ["sniper_mag", "sinus_helix", "shockwave_core"]},
 	"carpet": {"name": "Kamikaze Toxin Carpet", "ids": ["giga_pulse", "gravity_curve", "toxic_catalyst"]},
+	"hydra": {"name": "Hydra Swarm", "ids": ["seeker_swarm", "split_prism", "splinter_core"]},
+	"sawmill": {"name": "Sawmill Orbit", "ids": ["boomerang_saw", "orbital_magnet", "static_core"]},
+	"inferno": {"name": "Cyclone Inferno", "ids": ["flame_sprayer", "cyclone_curl", "volcanic_charge"]},
+	"minerain": {"name": "Pendulum Mine Rain", "ids": ["mine_layer", "pendulum_rail", "shockwave_core"]},
+	"twinshot": {"name": "Twin Time Shotgun", "ids": ["buckshot_cluster", "hesitation_rail", "twin_core"]},
+	"arcstorm": {"name": "Arc Storm Cage", "ids": ["arc_emitter", "sinus_helix", "stasis_field"]},
 }
 const BASE_IDS := ["pulse_spitter", "straight_rail", "plain_slug"]
 
@@ -32,6 +45,7 @@ var order: Array = []
 
 func _ready() -> void:
 	_build()
+	_build_extra()
 
 func get_module(id: StringName) -> WeaponModule:
 	return modules.get(id)
@@ -136,3 +150,50 @@ func _build() -> void:
 		"heat_per_shot": 3.0, "instability_value": 20.0, "misfire_id": &"launch_back", "risk_text": "Launches you into walls.", "unlock_cost": 35})
 	_cat(&"implosion_charge", "Implosion Charge", "Pulls enemies together, then detonates.", Pal.VIOLET, "C3", CatalystModule.Kind.IMPLOSION, {
 		"heat_per_shot": 5.0, "instability_value": 30.0, "misfire_id": &"pull_to_shot", "risk_text": "Drags YOU towards the shot.", "unlock_cost": 55})
+
+func _build_extra() -> void:
+	# ---- more triggers ----
+	_trigger(&"arc_emitter", "Arc Emitter", "Lightning bolt that jumps to 3 more enemies.", Pal.CYAN, "T6", {
+		"pellets": 1, "spread_deg": 2.0, "shots_per_second": 3.2, "proj_speed": 380.0, "damage": 9.0, "lifetime": 0.7,
+		"proj_size": 3.0, "chain": 3, "knockback": 40.0, "recoil": 25.0, "heat_per_shot": 6.0, "instability_value": 20.0,
+		"misfire_id": &"capacitor_arc", "risk_text": "Arcs back into you.", "unlock_cost": 40})
+	_trigger(&"flame_sprayer", "Flame Sprayer", "Short, wide, piercing fire. Melts anything close - and you.", Pal.RED, "T7", {
+		"pellets": 3, "spread_deg": 26.0, "shots_per_second": 18.0, "proj_speed": 200.0, "damage": 2.2, "lifetime": 0.3,
+		"proj_size": 3.5, "pierce": 99, "knockback": 8.0, "recoil": 6.0, "heat_per_shot": 3.0, "instability_value": 25.0,
+		"misfire_id": &"flashback", "risk_text": "Flashback burns you.", "unlock_cost": 45})
+	_trigger(&"mine_layer", "Mine Layer", "Lobs slow charges that stop and wait for a victim.", Pal.AMBER, "T8", {
+		"pellets": 1, "spread_deg": 4.0, "shots_per_second": 1.8, "proj_speed": 130.0, "damage": 22.0, "lifetime": 9.0,
+		"proj_size": 4.5, "drag": 3.2, "knockback": 60.0, "recoil": 40.0, "heat_per_shot": 7.0, "instability_value": 20.0,
+		"misfire_id": &"foot_mine", "risk_text": "Arms a mine under you.", "unlock_cost": 40})
+	_trigger(&"seeker_swarm", "Seeker Swarm", "Three small missiles that hunt the nearest enemy.", Pal.AMBER, "T9", {
+		"pellets": 3, "spread_deg": 44.0, "shots_per_second": 2.2, "proj_speed": 150.0, "damage": 5.0, "lifetime": 2.2,
+		"proj_size": 2.5, "seek": true, "knockback": 30.0, "recoil": 30.0, "heat_per_shot": 8.0, "instability_value": 25.0,
+		"misfire_id": &"boomerang", "risk_text": "Missiles may come for you.", "unlock_cost": 50})
+	_trigger(&"boomerang_saw", "Boomerang Saw", "Big saw that cuts out and back, hitting twice.", Pal.WHITE, "T0", {
+		"pellets": 1, "spread_deg": 0.0, "shots_per_second": 1.4, "proj_speed": 250.0, "damage": 14.0, "lifetime": 1.8,
+		"proj_size": 6.0, "pierce": 999, "saw": true, "knockback": 60.0, "recoil": 30.0, "heat_per_shot": 5.0, "instability_value": 20.0,
+		"misfire_id": &"boomerang", "risk_text": "Saw can snap back through you.", "unlock_cost": 45})
+	# ---- more trajectories ----
+	_traj(&"cyclone_curl", "Cyclone Curl", "Shots corkscrew in tight loops around themselves.", Pal.LIME, "R5", {
+		"curl": 3.0, "life_mult": 1.5, "heat_per_shot": 2.0, "instability_value": 20.0,
+		"misfire_id": &"dizzy", "risk_text": "Dizzy: inverted controls.", "unlock_cost": 35})
+	_traj(&"split_prism", "Split Prism", "After a blink the shot splits into a fan of three.", Pal.WHITE, "R6", {
+		"split_at": 0.22, "split_n": 3, "heat_per_shot": 3.0, "instability_value": 25.0,
+		"misfire_id": &"shrapnel_ring", "risk_text": "Shrapnel ring around you.", "unlock_cost": 45})
+	_traj(&"hesitation_rail", "Hesitation Rail", "Shots freeze mid-air, then launch at double speed.", Pal.CYAN, "R7", {
+		"hold_after": 0.15, "hold_time": 0.55, "hold_boost": 2.2, "life_mult": 2.0, "heat_per_shot": 1.0, "instability_value": 20.0,
+		"misfire_id": &"slowdown", "risk_text": "Slow-mo debuff.", "unlock_cost": 40})
+	_traj(&"pendulum_rail", "Pendulum Rail", "Shots reverse mid-flight and fly back through the crowd.", Pal.AMBER, "R8", {
+		"reverse_at": 0.45, "life_mult": 1.8, "heat_per_shot": 2.0, "instability_value": 25.0,
+		"misfire_id": &"boomerang", "risk_text": "Returns through YOU.", "unlock_cost": 40})
+	# ---- more catalysts ----
+	_cat(&"volcanic_charge", "Volcanic Charge", "Impacts detonate. Vent = volcano.", Pal.RED, "C4", CatalystModule.Kind.VOLCANIC, {
+		"heat_per_shot": 4.0, "instability_value": 25.0, "misfire_id": &"self_blast", "risk_text": "Detonates at your feet.", "unlock_cost": 45})
+	_cat(&"stasis_field", "Stasis Field", "Impacts leave zones that slow enemies by 60%.", Color("7fe9ff"), "C5", CatalystModule.Kind.STASIS, {
+		"heat_per_shot": 2.0, "instability_value": 20.0, "misfire_id": &"slowdown", "risk_text": "Slows YOU.", "unlock_cost": 35})
+	_cat(&"splinter_core", "Splinter Core", "Impacts burst into 5 shards.", Pal.WHITE, "C6", CatalystModule.Kind.SPLINTER, {
+		"heat_per_shot": 3.0, "instability_value": 25.0, "misfire_id": &"shrapnel_ring", "risk_text": "Shrapnel ring.", "unlock_cost": 40})
+	_cat(&"static_core", "Static Core", "Hits zap up to 3 neighbours with lightning.", Color("5fb8ff"), "C7", CatalystModule.Kind.STATIC, {
+		"heat_per_shot": 3.0, "instability_value": 20.0, "misfire_id": &"capacitor_arc", "risk_text": "Static discharge.", "unlock_cost": 40})
+	_cat(&"twin_core", "Twin Core", "Every shot is doubled at an angle. Shotguns go insane.", Color("ff7ad9"), "C8", CatalystModule.Kind.TWIN, {
+		"heat_per_shot": 5.0, "instability_value": 25.0, "misfire_id": &"mirror_back", "risk_text": "Mirror volley behind you.", "unlock_cost": 55})

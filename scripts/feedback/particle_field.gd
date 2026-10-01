@@ -18,6 +18,7 @@ var p_max := PackedFloat32Array()
 var p_size := PackedFloat32Array()
 var p_kind := PackedInt32Array()
 var count := 0
+var bounds := Rect2(0, 0, 640, 360)
 
 var rings: Array = []
 var texts: Array = []
@@ -44,7 +45,7 @@ func _init() -> void:
 	add_child(floor_layer)
 
 func _ready() -> void:
-	_font = ThemeDB.fallback_font
+	_font = Fonts.main()
 
 # ---- spawning --------------------------------------------------------------------------------
 func _add(p: Vector2, v: Vector2, c: Color, life: float, size: float, kind: int) -> void:
@@ -103,7 +104,7 @@ func clear_all() -> void:
 
 # ---- update ----------------------------------------------------------------------------------
 func _process(dt: float) -> void:
-	var inner := Room.INNER.grow(-2.0)
+	var inner := bounds.grow(-2.0)
 	var i := 0
 	while i < count:
 		var kind := p_kind[i]
@@ -212,9 +213,9 @@ func _draw() -> void:
 			var a: float = 1.0 - pow(t["t"] / life, 3.0)
 			var c: Color = t["col"]
 			c.a = a
-			var p: Vector2 = t["pos"] - Vector2(30, 0)
+			var p: Vector2 = t["pos"] - Vector2(120, 0)
 			if t["big"]:
 				p += Vector2(randf_range(-1, 1), randf_range(-1, 1))
-			var sz: int = t["size"]
-			draw_string(_font, p + Vector2(1, 1), t["s"], HORIZONTAL_ALIGNMENT_CENTER, 60, sz, Color(0, 0, 0, a))
-			draw_string(_font, p, t["s"], HORIZONTAL_ALIGNMENT_CENTER, 60, sz, c)
+			var sz: int = int(t["size"]) * 2
+			draw_string(_font, p + Vector2(1, 1), t["s"], HORIZONTAL_ALIGNMENT_CENTER, 240, sz, Color(0, 0, 0, a))
+			draw_string(_font, p, t["s"], HORIZONTAL_ALIGNMENT_CENTER, 240, sz, c)

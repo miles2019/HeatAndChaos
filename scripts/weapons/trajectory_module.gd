@@ -10,6 +10,13 @@ extends WeaponModule
 @export var through_cover := false
 @export var orbital := false
 @export var life_mult := 1.0
+@export var curl := 0.0
+@export var split_at := 0.0
+@export var split_n := 0
+@export var hold_after := 0.0
+@export var hold_time := 0.0
+@export var hold_boost := 1.0
+@export var reverse_at := 0.0
 
 func _init() -> void:
 	slot = &"trajectory"
@@ -24,6 +31,13 @@ func modify_projectile(p) -> void:
 	p.through_cover = through_cover
 	p.life *= life_mult
 	p.max_life = p.life
+	p.curl = curl
+	p.split_at = split_at
+	p.split_n = split_n
+	p.hold_after = hold_after
+	p.hold_time = hold_time
+	p.hold_boost = hold_boost
+	p.reverse_at = reverse_at
 	if drops_without_target:
 		p.speed *= 0.75
 		p.vel = p.vel.normalized() * p.speed

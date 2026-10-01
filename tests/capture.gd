@@ -74,23 +74,38 @@ func _setup_run(mode: String) -> void:
 	if mode.begins_with("fight"):
 		var key := mode.split(":")[1] if ":" in mode else "minefield"
 		run.debug_equip(key)
-		run.rooms.enter(1, 0)
+		run.rooms.enter(_f("combat", 1), Room.L)
 		await _t(2.2)
 		pl.override_active = true
 		_drive.call_deferred(pl)
-	elif mode == "boss":
+	elif mode.begins_with("boss"):
+		var act := int(mode.substr(4)) if mode.length() > 4 else 1
+		Game.act = act
 		run.debug_equip("sniper")
-		run.rooms.enter(4, 0)
+		run.rooms.enter(_f("boss", act), Room.L)
 		pl.override_active = true
 		_drive.call_deferred(pl)
-	elif mode == "combat2":
+	elif mode.begins_with("act"):
+		var act2 := int(mode.substr(3))
+		Game.act = act2
 		run.debug_equip("carpet")
-		run.rooms.enter(3, 0)
-		await _t(2.0)
+		run.rooms.enter(_f("combat", act2), Room.L)
+		await _t(2.2)
 		pl.override_active = true
 		_drive.call_deferred(pl)
 	elif mode == "workshop":
-		run.rooms.enter(2, 0)
+		run.rooms.enter(_f("workshop", 1), Room.L)
+	elif mode == "cursed":
+		run.rooms.enter(_f("cursed", 1), Room.D)
+		await _t(1.5)
+		pl.override_active = true
+		_drive.call_deferred(pl)
+
+func _f(kind: String, act: int) -> int:
+	for s in run.rooms.plan:
+		if s["kind"] == kind and s["act"] == act:
+			return s["idx"]
+	return 0
 
 func _drive(pl: Player) -> void:
 	var t := 0.0
@@ -110,3 +125,6 @@ func _drive(pl: Player) -> void:
 		pl.ov_move = Vector2(cos(t * 0.9), sin(t * 1.3)) * 0.7
 		pl.ov_shoot = (fmod(t, 1.7) < 1.35) if pl.weapon.is_charge_trigger() else true
 		Game.hp = maxi(Game.hp, 4)
+		if run.rooms.current.kind == "boss":
+			for e in room.enemies:
+				pass

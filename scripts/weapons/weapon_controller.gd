@@ -30,6 +30,9 @@ func set_loadout(l: WeaponLoadout) -> void:
 	Game.note_synergy(loadout)
 	Game.loadout_changed.emit()
 
+func _cd() -> float:
+	return 1.0 / (loadout.trigger_module.shots_per_second * (1.2 if Game.has_relic("overclock") else 1.0))
+
 func is_charge_trigger() -> bool:
 	return loadout.trigger_module.charge_time > 0.0
 
@@ -67,12 +70,12 @@ func update(dt: float, aim: Vector2, shoot_held: bool, can_act: bool) -> void:
 			charging = false
 			if charge >= 0.2:
 				_fire(aim, charge)
-				fire_cd = 1.0 / trig.shots_per_second
+				fire_cd = _cd()
 			charge = 0.0
 	else:
 		if shoot_held and fire_cd <= 0.0:
 			_fire(aim, 1.0)
-			fire_cd = 1.0 / trig.shots_per_second
+			fire_cd = _cd()
 
 func _fire(aim: Vector2, charge_ratio: float) -> void:
 	var mis := instab.consume()
@@ -157,6 +160,25 @@ func _apply_misfire(id: StringName, aim: Vector2) -> void:
 			runaway_left = 6
 		&"glitch_input_swap":
 			player.inverted_t = 1.2
+		&"flashback":
+			heat.add(30.0)
+			heat.burn_t = 2.0
+		&"foot_mine":
+			Game.world.spawn_effect("bomb", player.position, {"radius": 70.0, "delay": 1.0, "dur": 0.35})
+		&"dizzy":
+			player.inverted_t = 1.5
+		&"slowdown":
+			player.slow_t = 2.0
+		&"self_blast":
+			Game.world.spawn_effect("shock", player.position, {"radius": 44.0, "dur": 0.25, "hostile": true, "color": Pal.RED})
+		&"shrapnel_ring":
+			for i in 8:
+				var sp: Projectile = Game.world.acquire_projectile()
+				if sp:
+					var sd := Vector2.from_angle(TAU * i / 8.0)
+					sp.setup({"dir": sd, "speed": 75.0, "damage": 1.0, "lifetime": 1.3, "size": 2.5, "pierce": 0, "knockback": 0.0, "color": Pal.WHITE}, player.position + sd * 16.0, 1)
+		&"mirror_back":
+			_spawn_shots(-aim, 1.0, &"", true)
 	# readable, juicy feedback: distortion wave + chroma + roll shake + coloured ring
 	Game.stats["misfires"] += 1
 	Game.misfire_triggered.emit(id, info)
@@ -180,7 +202,7 @@ func try_vent() -> bool:
 	var w = Game.world
 	charging = false
 	charge = 0.0
-	w.spawn_effect("shock", pos, {"radius": 48.0 + h * 54.0, "force": 380.0, "damage": 8.0 + h * 36.0, "stun": 0.9, "color": Pal.RED, "dur": 0.35})
+	w.spawn_effect("shock", pos, {"radius": 48.0 + h * 54.0, "force": 380.0, "damage": (8.0 + h * 36.0) * (1.3 if Game.has_relic("vent_cap") else 1.0), "stun": 0.9, "color": Pal.RED, "dur": 0.35})
 	loadout.catalyst_module.on_vent({"pos": pos, "heat": h})
 	Juice.big_effect(pos, Pal.RED, 0.5 + h * 0.5)
 	Juice.burst(pos, Pal.AMBER, 10 + int(h * 20.0), 140.0, Vector2.ZERO, TAU, 0.8, 3.0, ParticleField.SMOKE)
@@ -188,3 +210,8 @@ func try_vent() -> bool:
 	player.rig.spring.punch(Vector2(6.0, 6.0))
 	Game.vent_used.emit(h)
 	return true
+
+## Used by bosses (THE PULSE) to override the player's weapon.
+func force_misfire(id: StringName) -> void:
+	if ModuleDB.MISFIRES.has(id):
+		_apply_misfire(id, player.aim_dir)

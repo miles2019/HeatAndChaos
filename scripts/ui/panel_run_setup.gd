@@ -17,8 +17,8 @@ var _extras: Array = []
 func _ready() -> void:
 	theme = UIKit.theme()
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	position = Vector2(110, 40)
-	size = Vector2(420, 280)
+	position = Vector2(150, 50)
+	size = Vector2(660, 420)
 	custom_minimum_size = size
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 5)
@@ -48,25 +48,25 @@ func _ready() -> void:
 	for o in [_char, _trig, _extra]:
 		o.item_selected.connect(func(_i: int) -> void: _update())
 	_desc.bbcode_enabled = true
-	_desc.custom_minimum_size = Vector2(400, 110)
+	_desc.custom_minimum_size = Vector2(630, 200)
 	v.add_child(_desc)
 	_update()
 	var row := HBoxContainer.new()
 	v.add_child(row)
 	if not hub_mode:
-		var go := UIKit.button("LAUNCH RUN", _launch, 120)
+		var go := UIKit.button("LAUNCH RUN", _launch, 200)
 		row.add_child(go)
 	row.add_child(UIKit.button(Settings.t("back"), func() -> void:
 		_store()
-		closed.emit(), 80))
+		closed.emit(), 140))
 	_char.call_deferred("grab_focus")
 
 func _row(v: VBoxContainer, label: String, ctl: OptionButton) -> void:
 	var h := HBoxContainer.new()
 	var l := UIKit.label(label)
-	l.custom_minimum_size = Vector2(90, 0)
+	l.custom_minimum_size = Vector2(150, 0)
 	h.add_child(l)
-	ctl.custom_minimum_size = Vector2(250, 16)
+	ctl.custom_minimum_size = Vector2(440, 26)
 	h.add_child(ctl)
 	v.add_child(h)
 

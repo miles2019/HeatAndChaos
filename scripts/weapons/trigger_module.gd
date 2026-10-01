@@ -13,6 +13,10 @@ extends WeaponModule
 @export var recoil := 20.0
 @export var charge_time := 0.0                  # >0 => hold to charge, release to fire
 @export var charge_heat_per_sec := 0.0
+@export var chain := 0
+@export var drag := 0.0
+@export var seek := false
+@export var saw := false
 
 func _init() -> void:
 	slot = &"trigger"
@@ -42,3 +46,9 @@ func fire(ctx: Dictionary) -> Array:
 func modify_projectile(p) -> void:
 	if charge_time > 0.0:
 		p.big = true
+	p.chain = chain
+	p.drag = drag
+	p.saw = saw
+	if seek:
+		p.seek = true
+		p.homing = 5.0

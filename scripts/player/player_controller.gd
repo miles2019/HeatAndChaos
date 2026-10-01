@@ -30,6 +30,7 @@ var launch_rest := 0.0
 var launch_hurts := false
 var wall_cd := 0.0
 var inverted_t := 0.0
+var slow_t := 0.0
 var burn_acc := 0.0
 var ghosts: Array = []
 var _ghost_t := 0.0
@@ -57,9 +58,9 @@ func _ready() -> void:
 	weapon.set_loadout(Game.loadout)
 
 func damage_mult() -> float:
-	var m := 1.0
+	var m: float = Game.char_data().get("dmg", 1.0) * (1.0 + weapon.heat.ratio() * 0.4)     # heat is power
 	if weapon.heat.ratio() >= 0.9:
-		m = Game.char_data()["hot_dmg"]
+		m *= Game.char_data()["hot_dmg"]
 	return m
 
 func apply_impulse(v: Vector2) -> void:
@@ -155,6 +156,7 @@ func tick(dt: float, can_act: bool) -> void:
 	wall_cd = maxf(0.0, wall_cd - dt)
 	launch_t = maxf(0.0, launch_t - dt)
 	inverted_t = maxf(0.0, inverted_t - dt)
+	slow_t = maxf(0.0, slow_t - dt)
 	_update_aim(room)
 	var move := _input_move()
 	if inverted_t > 0.0:
@@ -171,7 +173,7 @@ func tick(dt: float, can_act: bool) -> void:
 		if dash_t <= 0.0:
 			_end_dash()
 	# --- accel / decel ---
-	var speed_cap := MAX_SPEED * (0.62 if weapon.charging else 1.0)
+	var speed_cap := MAX_SPEED * (0.62 if weapon.charging else 1.0) * (0.55 if slow_t > 0.0 else 1.0) * (1.12 if Game.has_relic("boots") else 1.0)
 	if can_act:
 		var target := move * speed_cap
 		var rate := ACCEL if move.length() > 0.1 else DECEL
@@ -219,7 +221,7 @@ func tick(dt: float, can_act: bool) -> void:
 func _start_dash(move: Vector2) -> void:
 	dash_dir = move.normalized() if move.length() > 0.2 else aim_dir
 	dash_t = DASH_TIME
-	dash_cd = DASH_COOLDOWN
+	dash_cd = DASH_COOLDOWN * (0.75 if Game.has_relic("boots") else 1.0)
 	_ghost_t = 0.0
 	_was_dashing = true
 	rig.dir_angle = dash_dir.angle()
@@ -296,7 +298,7 @@ func _draw() -> void:
 		col.a = blink
 		draw_colored_polygon(PackedVector2Array([tp + Vector2(0, -6), tp + Vector2(6, 5), tp + Vector2(-6, 5)]), Color(0.05, 0.02, 0.08, 0.9))
 		draw_polyline(PackedVector2Array([tp + Vector2(0, -6), tp + Vector2(6, 5), tp + Vector2(-6, 5), tp + Vector2(0, -6)]), col, 1.0)
-		draw_string(ThemeDB.fallback_font, tp + Vector2(-8, 17), info["symbol"], HORIZONTAL_ALIGNMENT_CENTER, 16, 8, col)
+		draw_string(Fonts.main(), tp + Vector2(-16, 26), info["symbol"], HORIZONTAL_ALIGNMENT_CENTER, 32, 16, col)
 
 func _poly_ellipse(c: Vector2, rx: float, ry: float) -> PackedVector2Array:
 	var pts := PackedVector2Array()

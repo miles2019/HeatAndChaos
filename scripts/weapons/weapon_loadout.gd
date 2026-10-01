@@ -10,6 +10,9 @@ func recalculate() -> void:
 	var total := 0.0
 	for m in modules():
 		total += m.instability_value
+	total += Game.curse_inst
+	if Game.has_relic("overclock"):
+		total += 10.0
 	instability = clampf(total, 0.0, 100.0)
 
 func modules() -> Array:

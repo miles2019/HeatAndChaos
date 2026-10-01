@@ -8,9 +8,17 @@ const ENEMIES := {
 	"stalker": ["Steam-Gland Stalker", "Melee flanker. Zig-zags to dodge straight shots, telegraphs by stretching long and narrow, then leaps half the arena. Dash through the leap."],
 	"bulwark": ["Phase Bulwark", "Shielding support. A physical shield blocks everything from the front and it speeds up nearby allies. Bounce, curve or helix shots - or flank."],
 	"mortar": ["Acidic Mortar-Mite", "Zone denier. Anchors, rises and pulses, then lobs poison mortars that leave hazard pools. Watch the ground marker."],
+	"drone": ["Maintenance Drone", "Cheap and fast. Arrives in swarms - the fodder of The Furnace. One hit each, but never alone."],
+	"turret": ["Spit Turret", "Stationary. The barrel glows before it fires; every third volley is a full ring. Break the line, then close in."],
+	"slime": ["Foundry Slime", "Hops in squash-and-leap cycles and splits into two slimelings on death. Area damage loves it."],
+	"brute": ["Furnace Brute", "Elite. Slow, armoured, telegraphs a long charge and ends it with a ground-slam ring. Dash the charge, shoot the recovery."],
+	"hunter": ["Magnet Hunter", "Orbits at mid range, drags you in with a magnetic pulse, then fires a fan. Dash out of the pulse."],
 }
 const BOSSES := {
 	"vulcan": ["VULCAN-IX - The Overcharged Forge Core", "A former security core that reads its protection protocols as aggression. Phase 1: Piston Slam rings, Heat Ray. Below 50%: Core Venting (steam + bouncing magma) and Magnetic Pull (spiral bullets). Its heartbeat tells you when it will strike."],
+	"slime_engine": ["THE SLIME-FUSED ENGINE", "A failed experiment that insists on producing. Floods the floor with acid strips, lobs mortars and rams. At 50% it undergoes mitosis into two faster halves."],
+	"warden": ["MAGNET WARDEN", "A modular guardian that copies YOUR build: its volleys use your trigger pattern and your trajectory module. Its segments are tinted with your module colours."],
+	"pulse": ["THE PULSE", "The awakened overheating consciousness. Heartbeat rings, tendrils, assimilated machines - and from phase 2 it can override your weapon with a forced glitch."],
 }
 const STORY := """[color=#ffb02e][b]CINDERFALL & THE FURNACE[/b][/color]
 Beneath the neon city of Cinderfall lies The Furnace, a half-living industrial plant that makes energy, weapons and artificial organisms. Since the reactor core VULCAN-IX was damaged, the plant overheats. Machines mutate, slime grows through the pipes and every misfire changes the rooms.
@@ -31,20 +39,19 @@ Something woke up in the reactor: machine logic, bio-slime and stolen human heat
 4. The Coremind - THE PULSE
 
 [color=#8dff2a][b]ENDINGS[/b][/color]
-Shutdown / Containment / Fusion / Overload
-[color=#777](Prototype: Act 1 only.)[/color]"""
+Shutdown / Containment / Fusion / Overload"""
 
 func _ready() -> void:
 	theme = UIKit.theme()
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	position = Vector2(60, 14)
-	size = Vector2(520, 332)
+	position = Vector2(100, 20)
+	size = Vector2(760, 500)
 	custom_minimum_size = size
 	var root := VBoxContainer.new()
 	add_child(root)
 	var tabs := TabContainer.new()
 	tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	tabs.custom_minimum_size = Vector2(500, 280)
+	tabs.custom_minimum_size = Vector2(740, 440)
 	root.add_child(tabs)
 	var cdx: Dictionary = Save.data["codex"]
 	tabs.add_child(_rich("Story", STORY))
@@ -52,6 +59,7 @@ func _ready() -> void:
 	tabs.add_child(_rich("Bosses", _entries(BOSSES, cdx["bosses"])))
 	tabs.add_child(_rich("Modules", _modules(cdx["modules"])))
 	tabs.add_child(_rich("Synergies", _synergies(cdx["synergies"])))
+	tabs.add_child(_rich("Endings", _endings()))
 	tabs.get_tab_bar().grab_focus.call_deferred()
 	root.add_child(UIKit.button(Settings.t("back"), func() -> void: closed.emit(), 80))
 
@@ -104,3 +112,16 @@ func _unhandled_input(e: InputEvent) -> void:
 	if visible and e.is_action_pressed("ui_cancel"):
 		get_viewport().set_input_as_handled()
 		closed.emit()
+
+func _endings() -> String:
+	var s := ""
+	for id in Game.ENDINGS:
+		var e: Array = Game.ENDINGS[id]
+		if Save.data["endings"].has(id):
+			s += "[color=#ffb02e][b]%s[/b][/color]\n%s\n" % [e[0], e[1]]
+			if e[3] != "":
+				s += "[color=#8dff2a]Unlocked runner: %s[/color]\n" % Game.CHARACTERS[e[3]]["name"]
+			s += "\n"
+		else:
+			s += "[color=#555][b]??? ENDING[/b]\nDefeat THE PULSE and decide its fate.[/color]\n\n"
+	return s

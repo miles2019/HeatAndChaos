@@ -23,6 +23,10 @@ var _pool_i := 0
 var _end_timer := -1.0
 var _end_victory := false
 var _prev_hp := -1
+const BASE_ZOOM := 1.5
+var cam_pos := Vector2(320, 180)
+var _snap_cam := true
+var _build_cycle := 0
 
 func _ready() -> void:
 	Game.world = self
@@ -61,7 +65,7 @@ func _ready() -> void:
 	overlay_layer.process_mode = Node.PROCESS_MODE_ALWAYS
 	add_child(overlay_layer)
 	Game.run_ended.connect(_on_run_ended)
-	rooms.enter(Game.room_index, 2)
+	rooms.enter(Game.room_index, -1)
 	Audio.start_music()
 	_capture_mouse(true)
 	Game.player_hp_changed.emit(Game.hp, Game.max_hp)
@@ -115,11 +119,12 @@ func spawn_effect(kind: String, pos: Vector2, params: Dictionary) -> WorldEffect
 	room.content.add_child(e)
 	return e
 
-func spawn_pickup(kind: String, pos: Vector2, amount: int, module_id: StringName = &"") -> void:
+func spawn_pickup(kind: String, pos: Vector2, amount: int, module_id: StringName = &"", cost: String = "") -> void:
 	var p := Pickup.new()
 	p.kind = kind
 	p.amount = amount
 	p.module_id = module_id
+	p.cost = cost
 	p.position = pos
 	p.room = current_room()
 	current_room().content.add_child(p)
@@ -155,11 +160,17 @@ func dense_cluster(pos: Vector2, dir: Vector2, rng: float) -> Vector2:
 			best = e.position
 	return best
 
-func on_boss_defeated() -> void:
+func on_boss_defeated(act_no: int) -> void:
+	rooms.boss_cleared()
+	if act_no < 4:
+		Game.toast.emit("ACT %d COMPLETE - the way onward opens" % act_no, Pal.CYAN)
+		return
 	ending = true
-	_end_victory = true
-	_end_timer = 1.6
-	Game.toast.emit("VULCAN-IX OFFLINE. THE PULSE STIRS...", Pal.CYAN)
+	_end_timer = -1.0
+	Game.toast.emit("THE PULSE FALLS SILENT. DECIDE ITS FATE.", Pal.CYAN)
+	await get_tree().create_timer(1.8, false).timeout
+	_open_overlay()
+	overlay.show_endings()
 
 func _on_player_died() -> void:
 	ending = true
@@ -249,7 +260,7 @@ func _process(dt: float) -> void:
 		_end_timer -= dt
 		if _end_timer <= 0.0:
 			Game.end_run(_end_victory)
-	_update_camera()
+	_update_camera(dt)
 	Audio.set_heat(Juice.heat, Juice.instability)
 
 func _quick_preset(i: int) -> void:
@@ -265,13 +276,28 @@ func _quick_preset(i: int) -> void:
 	player.weapon.set_loadout(Game.loadout)
 	Game.toast.emit("PRESET %d LOADED" % (i + 1), Pal.AMBER)
 
-func _update_camera() -> void:
-	var follow := (player.position - Vector2(320, 180)) * 0.04
-	camera.position = Vector2(320, 180) + follow
+func snap_camera() -> void:
+	_snap_cam = true
+
+func _update_camera(dt: float) -> void:
+	var room := current_room()
+	var half := Vector2(320, 180) / Juice.cam_zoom
+	var want := player.position + player.aim_dir * 34.0 + Vector2(0, -6)
+	var b := room.inner.grow(24.0)
+	var lo := b.position + half
+	var hi := b.end - half
+	want.x = (lo.x + hi.x) * 0.5 if lo.x > hi.x else clampf(want.x, lo.x, hi.x)
+	want.y = (lo.y + hi.y) * 0.5 if lo.y > hi.y else clampf(want.y, lo.y, hi.y)
+	if _snap_cam:
+		_snap_cam = false
+		cam_pos = want
+	else:
+		cam_pos = cam_pos.lerp(want, 1.0 - exp(-dt * 5.0))     # smooth follow
+	camera.position = cam_pos
 	var j := Vector2(randf_range(-1.0, 1.0), randf_range(-1.0, 1.0)) * Juice.jitter
-	camera.offset = (Juice.cam_offset + j).round()
+	camera.offset = Juice.cam_offset + j
 	camera.rotation = Juice.cam_roll * 0.025
-	camera.zoom = Vector2.ONE * Juice.cam_zoom
+	camera.zoom = Vector2.ONE * BASE_ZOOM * Juice.cam_zoom
 
 func _unhandled_input(e: InputEvent) -> void:
 	if e.is_action_pressed("pause") and not ending:
@@ -285,16 +311,26 @@ func _unhandled_input(e: InputEvent) -> void:
 		return
 	if overlay_open or not (e is InputEventKey and e.pressed and not e.echo):
 		return
-	# developer shortcuts: F1-F4 = the four monster builds, F5 = spawn a wave, F7 = next room
+	# developer shortcuts: F1-F4 = monster builds, F6 = cycle all builds, F5 = spawn wave, F7 = next room, F8 = boss room
 	var k: int = e.keycode
 	if k >= KEY_F1 and k <= KEY_F4:
 		var key: String = ModuleDB.BUILDS.keys()[k - KEY_F1]
 		debug_equip(key)
 	elif k == KEY_F5:
-		for kind in ["stalker", "stalker", "bulwark", "mortar", "stalker"]:
+		for kind in ["stalker", "drone", "drone", "bulwark", "mortar", "turret", "slime", "hunter"]:
 			rooms._spawn_wave([kind])
+	elif k == KEY_F6:
+		_build_cycle = (_build_cycle + 1) % ModuleDB.BUILDS.size()
+		debug_equip(ModuleDB.BUILDS.keys()[_build_cycle])
 	elif k == KEY_F7:
-		rooms.enter(mini(current_room().index + 1, 4), 0)
+		var cur := current_room()
+		if cur.exits.has(Room.R):
+			rooms.enter(cur.exits[Room.R], Room.L)
+	elif k == KEY_F8:
+		for spec in rooms.plan:
+			if spec["kind"] == "boss" and spec["act"] >= current_room().act and spec["idx"] != current_room().index:
+				rooms.enter(spec["idx"], Room.L)
+				break
 
 func debug_equip(build_key: String) -> void:
 	var b: Dictionary = ModuleDB.BUILDS[build_key]

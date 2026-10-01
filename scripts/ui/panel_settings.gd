@@ -12,9 +12,9 @@ var _key_buttons := {}
 func _ready() -> void:
 	theme = UIKit.theme()
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	position = Vector2(60, 14)
-	custom_minimum_size = Vector2(520, 332)
-	size = Vector2(520, 332)
+	position = Vector2(140, 30)
+	custom_minimum_size = Vector2(680, 480)
+	size = Vector2(680, 480)
 	var tabs := TabContainer.new()
 	add_child(tabs)
 	tabs.add_child(_tab_feel())
@@ -33,7 +33,7 @@ func _box(title: String) -> VBoxContainer:
 func _row(v: VBoxContainer, text: String, ctl: Control) -> void:
 	var h := HBoxContainer.new()
 	var l := UIKit.label(text)
-	l.custom_minimum_size = Vector2(170, 0)
+	l.custom_minimum_size = Vector2(250, 0)
 	h.add_child(l)
 	h.add_child(ctl)
 	v.add_child(h)
@@ -41,7 +41,7 @@ func _row(v: VBoxContainer, text: String, ctl: Control) -> void:
 func _done_button(v: VBoxContainer) -> void:
 	var b := UIKit.button(Settings.t("back"), func() -> void:
 		Settings.save_settings()
-		closed.emit(), 80)
+		closed.emit(), 140)
 	v.add_child(b)
 
 func _tab_feel() -> Control:
@@ -79,7 +79,7 @@ func _tab_controls() -> Control:
 	v.add_child(UIKit.label("Click a key to remap. Mouse = aim/shoot(LMB)/vent(RMB). Pad: sticks, RT shoot, A dash, B vent, X use.", Color("8a93a5")))
 	for a in Settings.REMAPPABLE:
 		var action: String = a
-		var b := UIKit.button("", func() -> void: _begin_remap(action), 120)
+		var b := UIKit.button("", func() -> void: _begin_remap(action), 160)
 		_key_buttons[a] = b
 		_row(v, a.capitalize().replace("_", " "), b)
 	_refresh_keys()
@@ -122,7 +122,7 @@ func _tab_game() -> Control:
 			Save.wipe()
 			_delete_armed = false
 			del.text = "SAVE DELETED"
-	, 190)
+	, 330)
 	v.add_child(del)
 	_done_button(v)
 	return v

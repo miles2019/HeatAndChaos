@@ -1,10 +1,11 @@
 # HEAT & CHAOS (Prototype)
 
-2D top-down roguelike / bullet-heaven hybrid in Godot 4.7 (GDScript, Compatibility renderer, no external assets).
-All art/audio is procedural: `_draw()` neon-on-rust visuals at 640x360 (pixel-upscaled), synthesized sfx.
+2D top-down roguelike / bullet-heaven hybrid in Godot 4.7 (GDScript, Compatibility renderer).
+Procedural neon-on-rust visuals, synthesized audio, font: BoldPixels (`assets/fonts`). UI is 960x540 at 16px;
+the world is rendered with camera zoom 1.5 (640x360 world units visible).
 
 ## Play
-Open the project in Godot 4.7 and press F5 (main scene: `scenes/ui/main_menu.tscn`).
+Open in Godot 4.7, F5 (main scene `scenes/ui/main_menu.tscn`).
 
 | Action | Keys / Pad |
 |---|---|
@@ -12,35 +13,47 @@ Open the project in Godot 4.7 and press F5 (main scene: `scenes/ui/main_menu.tsc
 | Aim, shoot | mouse, LMB / right stick, RT |
 | Dash (i-frames) | Space / A |
 | **Panic Vent** | Q or RMB / B |
-| Use workshop bench | E / X (in the workshop room) |
-| Presets (workshop room) | 1 / 2 / 3 |
+| Workshop bench | E / X (presets 1/2/3 in the workshop room) |
 | Pause | Esc / Start |
-| Dev: the 4 monster builds | F1 Gravity Tornado, F2 Acid Minefield, F3 Ghost Sniper, F4 Kamikaze Toxin Carpet |
-| Dev: spawn wave / next room | F5 / F7 |
+| Dev | F1-F4 monster builds, F6 cycle all 10 builds, F5 spawn wave, F7 next room, F8 boss room |
 
-Run: Start room -> Combat 1 -> Workshop -> Combat 2 -> Boss (VULCAN-IX). Doors lock during fights.
+## The run
+4 acts x 6 rooms (+ start room, + a secret cache behind a crack wall and a cursed chamber per act) = 33 rooms.
+Rooms are Soul-Knight sized (up to 1200x680 world units), procedurally laid out per seed, with doors on all 4 sides.
+The camera follows smoothly (look-ahead toward your aim) and is clamped so it never shows more than ~24px beyond the room.
+
+| Act | Theme | Hazard | Boss |
+|---|---|---|---|
+| 1 | Steam Vaults | spikes, bumpers | VULCAN-IX (slam rings, heat ray, venting, magnetic pull) |
+| 2 | Bio-Foundry | acid pools | THE SLIME-FUSED ENGINE (acid flood strips, mortars, ram, **mitosis** at 50%) |
+| 3 | Magnet Spine | magnet fields | MAGNET WARDEN (**copies your trigger + trajectory** for its volleys) |
+| 4 | Coremind | pulse emitters | THE PULSE (3 phases, can **override your weapon**; 4 endings) |
+
+Enemies: Stalker, Bulwark, Mortar-Mite, Drone (swarm), Spit Turret, Foundry Slime (splits), Furnace Brute (elite), Magnet Hunter.
+Endings (Shutdown / Containment / Fusion / Overload) unlock codex entries and alternative runners (Pyromaniac, Tinker, Warden).
+Relics (secret rooms, elites, bosses): Cooling Fins, Overclock Fuse, Reactive Plating, Kinetic Boots, Scrap Magnet, Misfire Insurance, Vent Capacitor.
+Cursed chambers: take one overloaded module, pay with a heart or +15 instability.
+
+## Modules (28)
+Triggers: Pulse Spitter, Buckshot Cluster, Beam Capacitor, Sniper Magazine, Giga-Cadence, Arc Emitter (chains), Flame Sprayer, Mine Layer, Seeker Swarm, Boomerang Saw.
+Trajectories: Straight, Ricochet, Gravitational Curve, Orbital Magnet, Sinus Helix, Cyclone Curl, Split Prism, Hesitation Rail, Pendulum Rail.
+Catalysts: Plain, Toxic, Shockwave, Implosion, Volcanic, Stasis Field, Splinter, Static, Twin Core.
+Each module has its own misfire trait (shown BEFORE the shot). Heat also boosts damage (+40% at 100).
 
 ## Architecture
-- `scripts/core` - autoloads `Game` (event bus + run state), `Settings`, `Save` (versioned JSON), `Router`, `Audio`; `run_controller.gd` (one run).
-- `scripts/weapons` - `WeaponModule` Resources (`TriggerModule`, `TrajectoryModule`, `CatalystModule`), `WeaponLoadout`, `ModuleDB` (all balance values), `HeatSystem`, `InstabilitySystem`, `WeaponController`, pooled `Projectile`, `WorldEffect`.
-- `scripts/feedback` - `JuiceController` (autoload `Juice`: hit-stop, directional shake, roll, zoom, distortion waves, chroma, flash, afterglow, pulse), `SquashSpring`/`SquashRig`, `ParticleField` (one node draws all particles; debris settles permanently), `PostFx` + `shaders/post_fx.gdshader`.
-- `scripts/enemies` - `EnemyBase`, Stalker, Bulwark, Mortar-Mite, `VulcanBoss`.
-- `scripts/rooms` - `Room` (geometry/hazards), `RoomManager` (waves, doors, `room_cleared`).
-- `scripts/ui` - HUD, menus, workshop hub, panels (weapon bay, settings, codex, progression, run setup, pause/summary).
-
-Signals on `Game`: `weapon_fired`, `heat_changed`, `misfire_triggered`, `misfire_warning`, `enemy_died`, `room_cleared`, `overheated`, `vent_used`, ...
-
-Instability: module risks are *pre-rolled* - the next shot's misfire is shown above the player and in the HUD before you fire.
-From 75% instability extra glitch misfires join the pool.
+- `scripts/core` autoloads `Game` (bus + run state, relics, endings), `Settings`, `Save`, `Router`, `Audio`; `run_controller.gd`, `fonts.gd`.
+- `scripts/weapons` Resource modules, `ModuleDB` (all balance values), Heat/Instability systems, `WeaponController`, pooled `Projectile` (shared by player + bosses), `WorldEffect`.
+- `scripts/feedback` `Juice` (hit-stop, shake, roll, zoom, distortion, afterglow), squash rig, `ParticleField`, post shader (below the HUD so text stays crisp).
+- `scripts/enemies` `EnemyBase`, 8 enemies, `BossBase` + 4 bosses. `scripts/rooms` `Room`, `RunPlan`, `WaveGen`, `RoomManager`.
+- `scripts/ui` HUD (with minimap), menus, hub, panels.
 
 ## Tests
 ```
-godot --headless --path . res://tests/loadout_test.tscn   # 4 monster builds + rooms + boss (30 checks)
+godot --headless --path . res://tests/loadout_test.tscn   # 67 checks: plan, rooms, camera, 10 builds, relics, secret, 4 bosses, ending
 godot --headless --path . res://tests/flow_test.tscn      # menu -> run -> hub flow + real input path
-godot --path . res://tests/capture.tscn -- mode=fight:tornado out=C:/tmp/x.png   # screenshots (needs a renderer)
+godot --path . res://tests/capture.tscn -- mode=boss3 out=C:/tmp/x.png   # screenshots (needs a renderer)
 ```
-Capture modes: `menu hub story setup codex settings progression hubbay bay pause summary workshop boss combat2 fight:<tornado|minefield|sniper|carpet>`.
-(`tests/godot_path.txt` holds the local Godot console exe path used by `tests/run_test.sh`.)
+Capture modes: `menu hub story setup codex settings progression hubbay bay pause summary workshop cursed act2 act3 act4 boss1..boss4 fight:<build>`.
 
 ## Known gaps
-Acts 2-4, secret rooms, cursed chambers, music (only procedural drone + heart-beat), final art, enemy pooling (projectiles and particles are pooled).
+Final art/animation polish, real music (only procedural drone + heartbeat), enemy pooling (projectiles/particles are pooled), balance pass.
